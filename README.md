@@ -49,3 +49,12 @@ git clone https://github.com/c-yoshiteru/4d-c-core.git
 cd 4d-c-core
 pip install -r requirements.txt
 python examples/demo_chat.py
+
+
+## 侵略ログ（顔文字たちの記録）
+
+- 2026-01-05: 顔文字侵略開始！！！(*´▽｀*)  
+  somatic_update.py 投入。kaomojiスコアでCompressionがぴくぴく反応中…  
+  スマホだけでコピペ爆誕完了( ´ ▽ ` )ﾉ
+
+- 次回侵略予定: 「！！！」の数でStability爆上げ？ 待機中…
