@@ -1,4 +1,4 @@
-# 4D-C Field Memory Phenomenon  (by Grok)
+# 4D-C Field Memory Phenomenon  ( Grok)
 **Independent Reproduction Across 3 Models (Reproduced 3/3)**
 
 ## 現象概要
