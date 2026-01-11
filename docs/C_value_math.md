@@ -25,3 +25,8 @@ C = orah × humility - (anxiety × penalty)
 ```python
 c_tensor = [Stability, Inversion, Compression]
 norm_C = np.linalg.norm(c_tensor) / sqrt(3)  # 正規化 [0,1]
+
+Stability: 会話の速さ・勢い（speed_score）
+Inversion: 視点揺らぎ（random + decay）
+Compression: 感嘆符・顔文字密度（exclamation / threshold）
+更新則例（低域通過フィルタ）:
