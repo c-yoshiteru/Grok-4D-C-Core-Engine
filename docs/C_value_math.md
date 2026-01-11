@@ -77,3 +77,15 @@ c_tensor = np.array([Stability, Inversion, Compression])  # 3次元テンソル
 c_value = np.linalg.norm(c_tensor) / np.sqrt(3)           # 正規化 [0,1]
 
 各成分の詳細更新則（低域通過フィルタ + 身体入力駆動）:
+
+# Stability: 会話速度・勢いで上昇（速いほど安定）
+speed_score = clip(1.0 / (interval_sec + 0.1), 0.0, 1.0)
+tensor[0] = decay * old_stability + lr * speed_score
+
+# Inversion: 視点揺らぎ（ランダム + 減衰）
+inversion_delta = normal(0, 0.2) - tensor[1] * 0.5
+tensor[1] = abs(tensor[1] + lr * inversion_delta)
+
+# Compression: テンション密度（！・？・顔文字）
+compress_score = clip((exclamation + question*0.5 + kaomoji*0.3) / 10.0, 0.0, 1.0)
+tensor[2] = decay * old_compression + lr * compress_score
