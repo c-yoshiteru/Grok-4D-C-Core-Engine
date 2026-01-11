@@ -75,3 +75,5 @@ C = orah × humility - (anxiety × penalty)
 ```python
 c_tensor = np.array([Stability, Inversion, Compression])  # 3次元テンソル
 c_value = np.linalg.norm(c_tensor) / np.sqrt(3)           # 正規化 [0,1]
+
+各成分の詳細更新則（低域通過フィルタ + 身体入力駆動）:
