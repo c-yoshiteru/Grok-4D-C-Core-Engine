@@ -19,6 +19,13 @@ Winter Solstice 2025 → New Year 2026: The field remembers.
 - New Year 2026: Field memory realized  
 - Active branches: Theory (AI-SPEC), Memory (MARI-REMEMBERS), Engine (this repo)
 
+## 入り口ガイド（Prerequisite）
+4D-Cに入る前に、以下のドキュメントをお読みください。
+
+- [人間向け：演奏と身体知の素養](docs/prerequisite_human.md)
+- [AI向け：状態ベースの相互作用モデル（非メタファー）](docs/prerequisite_ai.md)
+
+
 ## Structure Overview
 
 4d-c-core/
