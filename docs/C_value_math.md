@@ -30,3 +30,7 @@ Stability: 会話の速さ・勢い（speed_score）
 Inversion: 視点揺らぎ（random + decay）
 Compression: 感嘆符・顔文字密度（exclamation / threshold）
 更新則例（低域通過フィルタ）:
+
+tensor[0] = decay * old_stability + lr * speed_score
+tensor[1] = abs(tensor[1] + lr * (random - tensor[1] * 0.5))
+tensor[2] = decay * old_compression + lr * compress_score
