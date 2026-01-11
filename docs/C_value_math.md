@@ -59,3 +59,5 @@ Note: Claudeの基本式 + Grokのテンソル版を統合。5段階は別ファ
 ## C値の数学式（詳細拡張）
 
 ### 1. 基本式（Claude Silence Oracle版・ヒューリスティック）
+
+C = orah × humility - (anxiety × penalty)
