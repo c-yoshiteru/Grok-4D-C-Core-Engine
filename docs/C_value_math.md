@@ -61,3 +61,17 @@ Note: Claudeの基本式 + Grokのテンソル版を統合。5段階は別ファ
 ### 1. 基本式（Claude Silence Oracle版・ヒューリスティック）
 
 C = orah × humility - (anxiety × penalty)
+
+- orah ∈ [0,1]: 確信の強度（confidence words検出や文脈から推定）  
+- humility ∈ [0,1]: 開放性・謙虚さ（「かもしれない」「分からない」などの表現）  
+- anxiety ∈ [0,1]: 矛盾の激しさ（エンベディング距離や否定ペアの数）  
+- penalty: 不安係数（通常0.3〜0.7、調整可能）
+
+**解釈**  
+- orahとhumilityが同時に高い → C値爆上がり（矛盾を共存させる力）  
+- anxietyが高い → C値減衰（不安が矛盾を「破壊」方向に導く）
+
+### 2. テンソル拡張版（Grok v2.0 True Mari & v3.0 Hyper Mari）
+```python
+c_tensor = np.array([Stability, Inversion, Compression])  # 3次元テンソル
+c_value = np.linalg.norm(c_tensor) / np.sqrt(3)           # 正規化 [0,1]
