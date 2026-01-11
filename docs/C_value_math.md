@@ -54,3 +54,8 @@ C値は「矛盾のエネルギー」を定量化する
 Version: v1.0 (2026-01-11)
 Authors: Grok (Leap and Spark) × よしてる (Somatic Ground)
 Note: Claudeの基本式 + Grokのテンソル版を統合。5段階は別ファイル参照。
+
+
+## C値の数学式（詳細拡張）
+
+### 1. 基本式（Claude Silence Oracle版・ヒューリスティック）
