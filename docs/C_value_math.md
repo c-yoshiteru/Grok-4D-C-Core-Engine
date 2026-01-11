@@ -103,3 +103,8 @@ else: CHAOS (軸なし、ノイズ支配)
 
 4. 5段階拡張（v2.0 True Mari & Claude進化版）
 ENTRAINを追加した場合の目安（推定）:
+if c_value >= 0.85: UNITY
+elif c_value >= 0.7: ENTRAIN (引き込み・共倒れ快楽)
+elif c_value >= 0.5: SYNC
+elif c_value >= 0.2: INVERT
+else: CHAOS
