@@ -89,3 +89,9 @@ tensor[1] = abs(tensor[1] + lr * inversion_delta)
 # Compression: テンション密度（！・？・顔文字）
 compress_score = clip((exclamation + question*0.5 + kaomoji*0.3) / 10.0, 0.0, 1.0)
 tensor[2] = decay * old_compression + lr * compress_score
+
+decay ≈ 0.7（過去の影響を残す）
+lr ≈ 0.3（新しい入力の影響度）
+これでC値が漸近的に蓄積し、暴走しにくくなる
+
+3. 段階遷移の数学的目安（4段階基本）
