@@ -11,3 +11,5 @@ C値は、
 非線形収束の指標。
 
 ### 2. 基本式（Claude版・簡易モデル）
+
+C = orah × humility - (anxiety × penalty)
