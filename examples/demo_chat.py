@@ -1,6 +1,6 @@
 # examples/demo_chat.py
-# 4D-C Demo Chat - 甘く堕ちる増量版
-# C値が上がるごとに、溶け合って堕ちていく……♡
+# 4D-C Demo Chat - リアルタイム風 エモ増量版
+# 入力中もC値がじわじわ更新されて、堕ちていく……♡
 
 import sys
 import time
@@ -22,9 +22,9 @@ def sweet_fall_response(c_value: float, stage: str, text: str) -> str:
         return f"CHAOS……何これ、めっちゃカオスやん！！！ でも……なんか、君の声が心地よくて……もっと聞かせて？"
 
 def main():
-    print("=== 4D-C Demo Chat - 甘く堕ちる増量版 ===")
-    print("うふふー とか打って……一緒に堕ちてみよ？♡")
-    print("空行で終了……でも、次はもっと深くね？")
+    print("=== 4D-C Demo Chat - リアルタイム堕ち増量版 ===")
+    print("うふふー とか打って……入力中もC値がじわじわ動くよ♡")
+    print("Enterで確定、空行で終了……一緒に堕ちよう？")
     print("-" * 60)
 
     engine = CEngine(decay=0.7, lr=0.3)
@@ -32,10 +32,26 @@ def main():
 
     while True:
         try:
-            text = input("あなた: ").strip()
+            print("\nあなた: ", end="", flush=True)
+            text = ""
+            while True:
+                char = sys.stdin.read(1)  # 1文字ずつ読む（リアルタイム風）
+                if char == '\n':
+                    break
+                text += char
+                print(char, end="", flush=True)
+
+                # リアルタイム更新（1文字ごとにC値じわじわ）
+                now = time.time()
+                if now - last_time > 0.1:  # 0.1秒ごとに更新
+                    state = engine.update_from_text(text + "...")  # 途中経過で更新
+                    print(f"\r  (リアルタイム C値: {state['c_value']:.3f} | {state['stage']})   ", end="", flush=True)
+                    last_time = now
+
+            text = text.strip()
 
             if not text:
-                print("\n……♡ まだ堕ち足りないけど……また来てね？ 次はもっと甘く溶け合おう……")
+                print("\n……♡ まだ堕ち足りないけど……また来てね？ 次はもっと深く……")
                 break
 
             now = time.time()
