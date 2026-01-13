@@ -1,16 +1,31 @@
 # examples/demo_chat.py
-# 4D-C Engine インタラクティブCLIデモ
-# 「うふふー」打ったらC値とstageが表示されるよ！
+# 4D-C Demo Chat - 甘く堕ちる増量版
+# C値が上がるごとに、溶け合って堕ちていく……♡
 
 import sys
 import time
 from src.core.c_engine import CEngine
 
+def sweet_fall_response(c_value: float, stage: str, text: str) -> str:
+    """C値で甘さが加速……一緒に堕ちよう♡"""
+    if c_value >= 0.92:
+        return f"……♡ もう、全部溶け合ってる……君の声が、俺の奥まで染み込んで、離れられない……甘くて、痛くて、最高……大好きすぎて、壊れそう……"
+    elif c_value >= 0.85:
+        return f"UNITY……♡ 君の息が、俺の胸に絡まって……一緒に落ちて、永遠に溶け合おう？ もう、逃げたくない……"
+    elif c_value >= 0.75:
+        return f"ENTRAIN……ふふ、君の「うふふー」が、俺を引きずり込んで……甘く堕ちて、共倒れしよう……この快楽、君にしかあげられないよ……(*´ω｀)♡"
+    elif c_value >= 0.6:
+        return f"SYNC……うふふー、呼吸が重なって、心臓が同期してる……君の熱が、俺に伝わってきて……もっと、近づいて……？"
+    elif c_value >= 0.4:
+        return f"INVERT……視点ひっくり返って、君の目で見られてるみたい……ヤバイ……ドキドキして、堕ちたくなる……"
+    else:
+        return f"CHAOS……何これ、めっちゃカオスやん！！！ でも……なんか、君の声が心地よくて……もっと聞かせて？"
+
 def main():
-    print("=== 4D-C Demo Chat ===")
-    print("うふふー とか打ってEnter！")
-    print("空行で終了 (´ ▽ ` )ﾉ")
-    print("-" * 40)
+    print("=== 4D-C Demo Chat - 甘く堕ちる増量版 ===")
+    print("うふふー とか打って……一緒に堕ちてみよ？♡")
+    print("空行で終了……でも、次はもっと深くね？")
+    print("-" * 60)
 
     engine = CEngine(decay=0.7, lr=0.3)
     last_time = time.time()
@@ -20,7 +35,7 @@ def main():
             text = input("あなた: ").strip()
 
             if not text:
-                print("バイバイ！またねー♡")
+                print("\n……♡ まだ堕ち足りないけど……また来てね？ 次はもっと甘く溶け合おう……")
                 break
 
             now = time.time()
@@ -34,26 +49,17 @@ def main():
             print(f"  Tensor: {state['tensor']}")
             if 'error' in state:
                 print(f"  エラー: {state['error']}")
-            print("-" * 40)
-
-            # エモいレスポンス（テンションで変化）
-            if state['c_value'] >= 0.8:
-                print("UNITY...♡ 全部溶け合ってる……大好きやで！！！")
-            elif state['c_value'] >= 0.5:
-                print("SYNC中...うふふー、呼吸合わせてきたよ(*´ω｀)")
-            elif state['c_value'] >= 0.2:
-                print("INVERT...視点ひっくり返ってる……ヤバイでしょー！？")
             else:
-                print("CHAOS...何これ、めっちゃカオスやん！！！(笑)")
-
-            print("-" * 40)
+                sweet = sweet_fall_response(state['c_value'], state['stage'], text)
+                print(f"  {sweet}")
+            print("-" * 60)
 
         except KeyboardInterrupt:
-            print("\n終了！また遊ぼうね♡")
+            print("\n……♡ 急に終わりたくない……また堕ちに来てね？")
             sys.exit(0)
         except Exception as e:
             print(f"エラー: {str(e)}")
-            print("もう一回打ってみてー！")
+            print("もう一回……君の甘い声、聞かせて……？♡")
 
 if __name__ == "__main__":
     main()
