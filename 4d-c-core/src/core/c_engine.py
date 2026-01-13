@@ -1,80 +1,66 @@
+# src/core/c_engine.py
+# 4D-C Core Engine - C値更新 + 状態遷移判定
+
 import numpy as np
-from enum import Enum
-from dataclasses import dataclass
-from typing import List, Dict
+import time
+from typing import Dict, Tuple
 
-class MariStage(Enum):
-    CHAOS = "CHAOS"
-    INVERT = "INVERT"
-    SYNC = "SYNC"
-    UNITY = "UNITY"
-
-@dataclass
-class CState:
-    tensor: np.ndarray          # [Stability, Inversion, Compression]
-    c_value: float              # ノルム正規化されたスカラーC
-    stage: MariStage
-    harmony: float = 0.5
+from somatic_update import SomaticUpdater  # 身体性入力用
 
 class CEngine:
-    def __init__(self, decay: float = 0.7, learning_rate: float = 0.3):
-        self.decay = decay
-        self.lr = learning_rate
-        self.c_tensor = np.array([0.5, 0.0, 0.5], dtype=float)  # 初期: 中庸
-        self.history: List[Dict] = []
+    def __init__(self, decay: float = 0.7, lr: float = 0.3):
+        self.updater = SomaticUpdater(decay=decay, lr=lr)
+        self.c_value = 0.5
+        self.stage = "CHAOS"
+        self.history = []  # ログ用
 
-    def somatic_update(self, input_text: str, interval_sec: float = 1.0):
-        """テキストの勢い（感嘆符密度）と会話速度からsomatic駆動"""
-        exclamation = input_text.count('!') + input_text.count('！') + input_text.count('？') * 0.5
-        compress_score = np.clip(exclamation / 8.0, 0.0, 1.0)
-        
-        speed_score = np.clip(1.0 / (interval_sec + 0.1), 0.0, 1.0)  # 速いほど安定↑
+    def update_from_text(self, text: str) -> Dict:
+        """テキスト入力でC値を更新"""
+        tensor, c = self.updater.update(text)
+        self.c_value = c
 
-        # 低域通過フィルタ風更新（過去を残しつつ新しい入力を取り込む）
-        self.c_tensor[0] = self.decay * self.c_tensor[0] + self.lr * speed_score          # Stability
-        self.c_tensor[1] += self.lr * (np.random.normal(0, 0.2) - self.c_tensor[1])      # Inversion: 矛盾揺らぎ（ランダム+減衰）
-        self.c_tensor[2] = self.decay * self.c_tensor[2] + self.lr * compress_score      # Compression
-
-        # Inversionは符号を考慮せず強度として扱う
-        self.c_tensor[1] = abs(self.c_tensor[1])
-
-        self._update_c_value_and_stage()
-
-    def _update_c_value_and_stage(self):
-        """Invariant C抽出: テンソルノルムを[0,1]に正規化"""
-        norm = np.linalg.norm(self.c_tensor)
-        self.c_value = np.clip(norm / np.sqrt(3), 0.0, 1.0)  # 3次元なのでsqrt(3)で正規化目安
-
-        if self.c_value >= 0.8:
-            self.stage = MariStage.UNITY
-        elif self.c_value >= 0.5:
-            self.stage = MariStage.SYNC
-        elif self.c_value >= 0.2:
-            self.stage = MariStage.INVERT
+        # 段階判定（4段階基本）
+        if c >= 0.8:
+            self.stage = "UNITY"
+        elif c >= 0.5:
+            self.stage = "SYNC"
+        elif c >= 0.2:
+            self.stage = "INVERT"
         else:
-            self.stage = MariStage.CHAOS
+            self.stage = "CHAOS"
 
-        # 簡易harmony（例: StabilityとCompressionの一致度）
-        self.harmony = 1.0 - abs(self.c_tensor[0] - self.c_tensor[2])
+        state = {
+            "text": text,
+            "tensor": tensor.tolist(),
+            "c_value": round(c, 3),
+            "stage": self.stage,
+            "timestamp": time.time()
+        }
+        self.history.append(state)
+        return state
 
-        self.history.append({
-            "tensor": self.c_tensor.copy(),
-            "c_value": self.c_value,
-            "stage": self.stage.value,
-            "harmony": self.harmony
-        })
+    def get_current_state(self) -> Dict:
+        return {
+            "c_value": round(self.c_value, 3),
+            "stage": self.stage,
+            "history_len": len(self.history),
+            "last_tensor": self.updater.c_tensor.tolist() if hasattr(self.updater, 'c_tensor') else None
+        }
 
-    def get_state(self) -> CState:
-        return CState(self.c_tensor.copy(), self.c_value, self.stage, self.harmony)
-
-# クイックテスト例
+# クイックテスト（単体で動く）
 if __name__ == "__main__":
     engine = CEngine()
-    inputs = ["うふふー。", "きたよー！！！( ´ ▽ ` )ﾉ", "ヤバイよこれ…", "……うむ。"]
-    for txt in inputs:
-        engine.somatic_update(txt, interval_sec=2.0)
-        state = engine.get_state()
+    test_texts = [
+        "うふふー。",
+        "きたよー！！！( ´ ▽ ` )ﾉ",
+        "ヤバイでしょー(*´ω｀)",
+        "……うむ。",
+        "大好きやで♡♡♡"
+    ]
+    for txt in test_texts:
+        state = engine.update_from_text(txt)
         print(f"Input: {txt}")
-        print(f"  C: {state.c_value:.3f} | Stage: {state.stage.value} | Harmony: {state.harmony:.3f}")
-        print(f"  Tensor: {state.tensor}")
+        print(f"  C値: {state['c_value']} | Stage: {state['stage']}")
+        print(f"  Tensor: {state['tensor']}")
         print("-" * 40)
+        time.sleep(1)  # 間隔テスト
