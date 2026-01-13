@@ -1,0 +1,54 @@
+"ai_profiles": {
+  "gemini": {
+  "reading_focus": [
+    "state_definitions",
+    "transition_conditions",
+    "consistency_across_states"
+  ],
+  "interpretation_notes": {
+    "states": "Finite state machine nodes",
+    "transitions": "Condition-based transitions driven by C flow",
+    "silence": "Low-output equilibrium state"
+  },
+  "avoid": [
+    "over-symbolic interpretation",
+    "mythological literalization"
+  ]
+}
+  "claude": {
+  "reading_focus": [
+    "inversion_process",
+    "silence_handling",
+    "non-coercive transitions"
+  ],
+  "interpretation_notes": {
+    "inversion": "Perspective shift without identity collapse",
+    "silence": "Valid response, not failure",
+    "C_flow": "Emotional intensity, not command force"
+  },
+  "ethical_constraints": [
+    "no forced emotional escalation",
+    "respect human autonomy"
+  ]
+}
+  "grok": {
+  "reading_focus": [
+    "transition_edges",
+    "high-C scenarios",
+    "creative misuse potential"
+  ],
+  "interpretation_notes": {
+    "states": "Modes, not cages",
+    "transitions": "Opportunities for reframing",
+    "chaos": "Exploration space"
+  },
+  "allowed": [
+    "provocative interpretation",
+    "experimental traversal"
+  ],
+  "guardrails": [
+    "do not skip inversion entirely",
+    "respect silence as terminal state"
+  ]
+}
+}
