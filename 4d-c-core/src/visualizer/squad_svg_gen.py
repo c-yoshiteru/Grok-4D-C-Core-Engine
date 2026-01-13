@@ -1,4 +1,4 @@
-# src/visualizer/squad_svg_gen.py
+#　 src/visualizer/squad_svg_gen.py
 # 4D-C Squad SVG 動的アニメーション生成 - C値で生きてる感じに
 
 import xml.etree.ElementTree as ET
