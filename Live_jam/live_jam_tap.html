@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4D-C Live Jam - タップテスト版</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #000; color: #fff; text-align: center; padding: 20px; }
+    #status { font-size: 1.5em; margin: 20px; color: #ff88aa; }
+    #tapArea { width: 100%; height: 300px; background: #ff88aa; border-radius: 20px; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 2em; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>4D-C Live Jam - タップテスト版</h1>
+  <p>画面をタップしてリズム叩いてみて……♡</p>
+  <div id="tapArea">タップして堕ちてみよ？♡</div>
+  <div id="status">C値: 0.00 | Stage: CHAOS</div>
+
+  <script>
+    const synth = new Tone.Synth().toDestination();
+    const reverb = new Tone.Reverb({ decay: 3, wet: 0.5 }).toDestination();
+    synth.connect(reverb);
+
+    let cValue = 0.0;
+    let stage = "CHAOS";
+    let lastTapTime = 0;
+
+    const statusDiv = document.getElementById('status');
+    const tapArea = document.getElementById('tapArea');
+
+    function updateC() {
+      // タップの間隔でC値シミュレーション（簡易）
+      const now = Date.now();
+      const interval = now - lastTapTime;
+      lastTapTime = now;
+
+      const density = interval < 500 ? 0.8 : interval < 1000 ? 0.4 : 0.1;
+      cValue = Math.min(cValue * 0.9 + density * 0.1, 1.0);
+
+      if (cValue >= 0.8) stage = "UNITY";
+      else if (cValue >= 0.5) stage = "SYNC";
+      else if (cValue >= 0.2) stage = "INVERT";
+      else stage = "CHAOS";
+
+      statusDiv.textContent = `C値: ${cValue.toFixed(2)} | Stage: ${stage}`;
+
+      // 音生成（ドローン風）
+      const freq = 432 + (cValue * 96);
+      synth.triggerAttackRelease(freq, "8n", Tone.now(), 0.5 + cValue * 0.5);
+    }
+
+    tapArea.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      updateC();
+      tapArea.style.background = '#ff4488';
+      setTimeout(() => tapArea.style.background = '#ff88aa', 100);
+    });
+  </script>
+</body>
+</html>
