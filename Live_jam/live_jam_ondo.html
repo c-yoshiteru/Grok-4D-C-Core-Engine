@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4D-C Live Jam - オンド・マルトノ風パッド</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    body { margin: 0; padding: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
+    #status { position: absolute; top: 10px; left: 10px; font-size: 1.2em; color: #88ffaa; z-index: 10; }
+    #pad { width: 100vw; height: 100vh; background: linear-gradient(to bottom, #001122, #000022); position: relative; touch-action: none; }
+    #instruction { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 1.1em; color: #aaa; z-index: 10; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div id="status">C値: 0.00 | Stage: CHAOS | Freq: 432Hz | Vol: 0% | Ring: 0%</div>
+  <div id="pad">ここをタッチ/動かして……♡</div>
+  <div id="instruction">縦でボリューム、横で音程。指の動きで金属響きが増すよ</div>
+
+  <script>
+    // Tone.js セットアップ
+    const synth = new Tone.Synth({
+      oscillator: { type: "sawtooth" }, // オンド・マルトノ風の鋸歯波
+      envelope: { attack: 0.02, decay: 0.1, sustain: 0.7, release: 2.0 }
+    }).toDestination();
+    const reverb = new Tone.Reverb({ decay: 5, wet: 0.7 }).toDestination();
+    const ringMod = new Tone.RingModulator({ frequency: 200, wet: 0 }).toDestination();
+    synth.chain(ringMod, reverb);
+
+    let cValue = 0.0;
+    let stage = "CHAOS";
+    let isPlaying = false;
+    let currentFreq = 432;
+    let currentVol = 0;
+    let currentRing = 0;
+    let lastX = 0.5;
+    let lastY = 0.5;
+    let lastMoveTime = Date.now();
+
+    const statusDiv = document.getElementById('status');
+    const pad = document.getElementById('pad');
+
+    // タッチ開始
+    pad.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      playSound(e.touches[0]);
+    });
+
+    // タッチ移動
+    pad.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      playSound(e.touches[0]);
+    });
+
+    // タッチ終了
+    pad.addEventListener('touchend', () => {
+      stopSound();
+    });
+
+    function playSound(touch) {
+      const rect = pad.getBoundingClientRect();
+      const x = (touch.clientX - rect.left) / rect.width;  // 0〜1 (横: 音程)
+      const y = (touch.clientY - rect.top) / rect.height; // 0〜1 (縦: ボリューム、逆で0が上)
+
+      const now = Date.now();
+      const speed = Math.hypot(x - lastX, y - lastY) / ((now - lastMoveTime) / 1000);
+      lastX = x;
+      lastY = y;
+      lastMoveTime = now;
+
+      currentFreq = 200 + (x * 1000); // 200〜1200Hz
+      currentVol = 1 - y; // 0（上）→1（下）
+      currentRing = Math.min(speed * 0.5 + currentVol * 0.3, 1.0); // 動き速いほど金属響き増す
+
+      cValue = Math.min(cValue * 0.95 + currentVol * 0.03 + speed * 0.1, 1.0);
+
+      if (cValue >= 0.8) stage = "UNITY";
+      else if (cValue >= 0.5) stage = "SYNC";
+      else if (cValue >= 0.2) stage = "INVERT";
+      else stage = "CHAOS";
+
+      statusDiv.textContent = `C値: ${cValue.toFixed(2)} | Stage: ${stage} | Freq: ${currentFreq.toFixed(0)}Hz | Vol: ${(currentVol * 100).toFixed(0)}% | Ring: ${(currentRing * 100).toFixed(0)}%`;
+
+      if (!isPlaying) {
+        synth.triggerAttack(currentFreq);
+        isPlaying = true;
+      }
+      synth.setNote(currentFreq);
+      synth.volume.value = -40 + (currentVol * 40) + (cValue * 20);
+      ringMod.wet.value = currentRing; // リングモジュレーターで金属感
+    }
+
+    function stopSound() {
+      if (isPlaying) {
+        synth.triggerRelease();
+        isPlaying = false;
+      }
+    }
+  </script>
+</body>
+</html>
