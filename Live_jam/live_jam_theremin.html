@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4D-C Live Jam - テルミン風カオスパッド</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #000; color: #fff; text-align: center; padding: 20px; margin: 0; }
+    #status { font-size: 1.5em; margin: 20px; color: #ff88aa; }
+    #pad { width: 100%; height: 80vh; background: linear-gradient(#000, #111); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 3em; cursor: pointer; touch-action: none; }
+    #instruction { margin: 20px; font-size: 1.2em; }
+  </style>
+</head>
+<body>
+  <h1>4D-C Live Jam - テルミン風カオスパッド</h1>
+  <p id="instruction">画面をタップ/指を近づけて遊んで……♡<br>ゆーっくり動かすと甘く堕ちるよ</p>
+  <div id="pad">ここをタッチ/近づけてみて？♡</div>
+  <div id="status">C値: 0.00 | Stage: CHAOS | Freq: 432Hz</div>
+
+  <script>
+    // Tone.js セットアップ
+    const synth = new Tone.Synth({
+      oscillator: { type: "sine" },
+      envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 }
+    }).toDestination();
+    const reverb = new Tone.Reverb({ decay: 4, wet: 0.6 }).toDestination();
+    synth.connect(reverb);
+
+    let cValue = 0.0;
+    let stage = "CHAOS";
+    let currentFreq = 432;
+    let isPlaying = false;
+
+    const statusDiv = document.getElementById('status');
+    const pad = document.getElementById('pad');
+
+    // マイク入力セットアップ
+    async function startAudio() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const audioContext = new AudioContext();
+        const source = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        function update() {
+          analyser.getByteFrequencyData(dataArray);
+
+          // 音量（RMS簡易）で距離シミュレート（テルミン風）
+          let volume = 0;
+          for (let i = 0; i < bufferLength; i++) {
+            volume += dataArray[i] * dataArray[i];
+          }
+          volume = Math.sqrt(volume / bufferLength) / 255; // 0〜1
+
+          // テルミン風ピッチ（音量大きいほど高周波）
+          currentFreq = 200 + (volume * 800) + (cValue * 200); // 200〜1200Hz + C値ボーナス
+
+          cValue = Math.min(volume * 3 + cValue * 0.9, 1.0);
+
+          if (cValue >= 0.8) stage = "UNITY";
+          else if (cValue >= 0.5) stage = "SYNC";
+          else if (cValue >= 0.2) stage = "INVERT";
+          else stage = "CHAOS";
+
+          statusDiv.textContent = `C値: ${cValue.toFixed(2)} | Stage: ${stage} | Freq: ${currentFreq.toFixed(0)}Hz`;
+
+          // 音再生
+          if (volume > 0.05) { // 無音時は止める
+            if (!isPlaying) {
+              synth.triggerAttack(currentFreq);
+              isPlaying = true;
+            }
+            synth.setNote(currentFreq);
+            synth.volume.value = -20 + (volume * 30) + (cValue * 20); // ボリュームも連動
+          } else {
+            if (isPlaying) {
+              synth.triggerRelease();
+              isPlaying = false;
+            }
+          }
+
+          requestAnimationFrame(update);
+        }
+        update();
+      } catch (err) {
+        console.error("マイクエラー:", err);
+        alert("マイク許可が必要やで！許可してリロードしてみて♡");
+      }
+    }
+
+    pad.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      startAudio();
+      pad.style.background = 'linear-gradient(#ff4488, #ff88aa)';
+    });
+
+    pad.addEventListener('touchend', () => {
+      pad.style.background = 'linear-gradient(#000, #111)';
+    });
+  </script>
+</body>
+</html>
