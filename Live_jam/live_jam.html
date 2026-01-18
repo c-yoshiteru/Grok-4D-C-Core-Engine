@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4D-C Live Jam - ブラウザ版</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #000; color: #fff; text-align: center; padding: 20px; }
+    #status { font-size: 1.5em; margin: 20px; color: #ff88aa; }
+    button { padding: 15px 30px; font-size: 1.2em; margin: 10px; background: #ff88aa; border: none; border-radius: 10px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>4D-C Live Jam - ブラウザ版</h1>
+  <p>マイクONにして、声出したりタップしたり……♡</p>
+  <button id="startBtn">スタート（マイクON）</button>
+  <div id="status">C値: 0.00 | Stage: CHAOS</div>
+
+  <script>
+    const synth = new Tone.Synth().toDestination();
+    const reverb = new Tone.Reverb({ decay: 3, wet: 0.5 }).toDestination();
+    synth.connect(reverb);
+
+    let cValue = 0.0;
+    let stage = "CHAOS";
+
+    const statusDiv = document.getElementById('status');
+
+    async function start() {
+      await Tone.start();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      source.connect(analyser);
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      function updateC() {
+        analyser.getByteTimeDomainData(dataArray);
+        let rms = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          rms += dataArray[i] * dataArray[i];
+        }
+        rms = Math.sqrt(rms / bufferLength) / 128; // 0〜1近似
+        cValue = Math.min(rms * 5, 1.0); // 簡易C値
+
+        if (cValue >= 0.8) stage = "UNITY";
+        else if (cValue >= 0.5) stage = "SYNC";
+        else if (cValue >= 0.2) stage = "INVERT";
+        else stage = "CHAOS";
+
+        statusDiv.textContent = `C値: ${cValue.toFixed(2)} | Stage: ${stage}`;
+
+        // 音生成（ドローン風）
+        const freq = 432 + (cValue * 96);
+        synth.triggerAttackRelease(freq, "8n", Tone.now(), 0.5 + cValue * 0.5);
+
+        requestAnimationFrame(updateC);
+      }
+      updateC();
+    }
+
+    document.getElementById('startBtn').addEventListener('click', start);
+  </script>
+</body>
+</html>
