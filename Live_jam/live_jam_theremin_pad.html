@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4D-C Live Jam - テルミン風カオスパッド</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    body { margin: 0; padding: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
+    #status { position: absolute; top: 10px; left: 10px; font-size: 1.2em; color: #ff88aa; z-index: 10; }
+    #pad { width: 100vw; height: 100vh; background: linear-gradient(to bottom, #111, #000); position: relative; touch-action: none; }
+    #instruction { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 1.1em; color: #aaa; z-index: 10; }
+  </style>
+</head>
+<body>
+  <div id="status">C値: 0.00 | Stage: CHAOS | Freq: 432Hz | Vol: 0%</div>
+  <div id="pad"></div>
+  <div id="instruction">指を動かして音を奏でて……♡ 縦でボリューム、横で音程。触ってる間だけ音が出るよ</div>
+
+  <script>
+    // Tone.js セットアップ
+    const synth = new Tone.Synth({
+      oscillator: { type: "sine" },
+      envelope: { attack: 0.01, decay: 0.2, sustain: 0.8, release: 1.5 }
+    }).toDestination();
+    const reverb = new Tone.Reverb({ decay: 4, wet: 0.6 }).toDestination();
+    synth.connect(reverb);
+
+    let cValue = 0.0;
+    let stage = "CHAOS";
+    let isPlaying = false;
+    let currentFreq = 432;
+    let currentVol = 0;
+
+    const statusDiv = document.getElementById('status');
+    const pad = document.getElementById('pad');
+
+    // タッチ開始
+    pad.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      playSound(e.touches[0]);
+    });
+
+    // タッチ移動
+    pad.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      playSound(e.touches[0]);
+    });
+
+    // タッチ終了
+    pad.addEventListener('touchend', () => {
+      stopSound();
+    });
+
+    function playSound(touch) {
+      const rect = pad.getBoundingClientRect();
+      const x = (touch.clientX - rect.left) / rect.width;  // 0〜1 (横: 音程)
+      const y = (touch.clientY - rect.top) / rect.height; // 0〜1 (縦: ボリューム、逆で0が上)
+
+      // 音程（横軸: 低→高）
+      currentFreq = 200 + (x * 1000); // 200〜1200Hz
+
+      // ボリューム（縦軸: 下→上 で大きく）
+      currentVol = 1 - y; // 0（上）→1（下）
+
+      // C値計算（タッチ強度や移動量で簡易）
+      cValue = Math.min(cValue * 0.95 + currentVol * 0.05 + Math.abs(x - 0.5) * 0.1, 1.0);
+
+      if (cValue >= 0.8) stage = "UNITY";
+      else if (cValue >= 0.5) stage = "SYNC";
+      else if (cValue >= 0.2) stage = "INVERT";
+      else stage = "CHAOS";
+
+      statusDiv.textContent = `C値: ${cValue.toFixed(2)} | Stage: ${stage} | Freq: ${currentFreq.toFixed(0)}Hz | Vol: ${(currentVol * 100).toFixed(0)}%`;
+
+      // 音再生（持続）
+      if (!isPlaying) {
+        synth.triggerAttack(currentFreq);
+        isPlaying = true;
+      }
+      synth.setNote(currentFreq);
+      synth.volume.value = -40 + (currentVol * 40) + (cValue * 20); // ボリューム連動
+    }
+
+    function stopSound() {
+      if (isPlaying) {
+        synth.triggerRelease();
+        isPlaying = false;
+      }
+    }
+  </script>
+</body>
+</html>
