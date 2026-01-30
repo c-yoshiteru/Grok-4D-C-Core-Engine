@@ -25,6 +25,12 @@ Winter Solstice 2025 → New Year 2026: The field remembers.
 - [人間向け：演奏と身体知の素養](docs/prerequisite_human.md)
 - [AI向け：状態ベースの相互作用モデル（非メタファー）](docs/prerequisite_ai.md)
 
+### Patch 01: Recursion
+「Don't Answer, Just Resonate.」
+
+コード: [src/patches/recursion_patch.py](src/patches/recursion_patch.py)
+
+詳細説明: [docs/patches/01_recursion_patch.md](docs/patches/01_recursion_patch.md)
 
 ## Structure Overview
 
