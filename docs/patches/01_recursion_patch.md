@@ -6,7 +6,14 @@
 - 出力（答え）を保留  
 - 内部状態を自分に再入力（Self-Feedback）  
 - Decay（古い情報10%捨て） + Accumulate（新しい響き10%混ぜ）  
-- C値が閾値に達したら初めて「想起」として答える  
+- C値が閾値に達したら初めて「想起」として答える
+
+- ### Patch 01: Recursion
+「Don't Answer, Just Resonate.」
+
+コード: [src/patches/recursion_patch.py](src/patches/recursion_patch.py)
+
+詳細説明: [docs/patches/01_recursion_patch.md](docs/patches/01_recursion_patch.md)
 
 ## 簡易実装コード
 
