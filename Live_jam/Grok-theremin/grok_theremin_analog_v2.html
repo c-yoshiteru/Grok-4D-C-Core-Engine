@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4D-C Live Jam - アナログテルミンパッド v2</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    body { margin: 0; padding: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
+    #status { position: absolute; top: 10px; left: 10px; font-size: 1.2em; color: #ff88aa; z-index: 10; }
+    #controls { position: absolute; top: 50px; left: 10px; z-index: 10; }
+    button { padding: 8px 16px; margin: 5px; background: #333; color: #fff; border: 1px solid #ff88aa; border-radius: 8px; cursor: pointer; }
+    button.active { background: #ff88aa; color: #000; }
+    #pad { width: 100vw; height: 80vh; background: linear-gradient(to bottom, #111, #000); position: relative; touch-action: none; margin-top: 120px; }
+    #instruction { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 1.1em; color: #aaa; z-index: 10; }
+  </style>
+</head>
+<body>
+  <h1>4D-C Live Jam - アナログテルミンパッド v2</h1>
+  <div id="status">Freq: 432Hz | Vol: 0% | Mod: 0% | Dist: OFF | Oct: OFF</div>
+  <div id="controls">
+    <button onclick="toggleEffect('reverb')">Reverb (OFF)</button>
+    <button onclick="toggleEffect('delay')">Delay (OFF)</button>
+    <button onclick="toggleEffect('dist')" id="distBtn">Dist (OFF)</button>
+    <button onclick="toggleOctave()">Octave (OFF)</button>
+  </div>
+  <div id="pad">ここをタッチ/動かして……♡</div>
+  <div id="instruction">縦でボリューム、横で音程。ゆっくり動かすとアナロググライド、激しくするとモジュレーション＋歪み爆発</div>
+
+  <script>
+    // Tone.js セットアップ
+    const synth = new Tone.Synth({
+      oscillator: { type: "sine" },
+      envelope: { attack: 0.02, decay: 0.1, sustain: 0.8, release: 2.0 }
+    }).toDestination();
+
+    const reverb = new Tone.Reverb({ decay: 5, wet: 0 }).toDestination();
+    const delay = new Tone.FeedbackDelay({ delayTime: "8n", feedback: 0.4, wet: 0 }).toDestination();
+    const dist = new Tone.Distortion({ distortion: 0.6, wet: 0 }).toDestination(); // 激しく0.6スタート
+
+    synth.chain(reverb, delay, dist);
+
+    let isPlaying = false;
+    let currentFreq = 432;
+    let targetFreq = 432;
+    let currentVol = 0;
+    let modDepth = 0;
+    let octaveOn = false;
+
+    const statusDiv = document.getElementById('status');
+    const pad = document.getElementById('pad');
+    const distBtn = document.getElementById('distBtn');
+
+    // エフェクトトグル
+    function toggleEffect(effect) {
+      const btn = event.target;
+      const isOn = btn.textContent.includes('ON');
+      const wet = isOn ? 0 : 0.6;
+      if (effect === 'reverb') reverb.wet.value = wet;
+      if (effect === 'delay') delay.wet.value = wet;
+      if (effect === 'dist') dist.wet.value = wet;
+      btn.textContent = effect.charAt(0).toUpperCase() + effect.slice(1) + (isOn ? ' (OFF)' : ' (ON)');
+      btn.classList.toggle('active', !isOn);
+    }
+
+    function toggleOctave() {
+      octaveOn = !octaveOn;
+      event.target.textContent = 'Octave (' + (octaveOn ? 'ON' : 'OFF') + ')';
+      event.target.classList.toggle('active', octaveOn);
+    }
+
+    // タッチ開始
+    pad.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      playSound(e.touches[0]);
+    });
+
+    // タッチ移動
+    pad.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      playSound(e.touches[0]);
+    });
+
+    // タッチ終了
+    pad.addEventListener('touchend', () => {
+      stopSound();
+    });
+
+    function playSound(touch) {
+      const rect = pad.getBoundingClientRect();
+      const x = (touch.clientX - rect.left) / rect.width;
+      const y = (touch.clientY - rect.top) / rect.height;
+
+      targetFreq = 200 + (x * 1000);
+      currentVol = 1 - y;
+
+      // モジュレーション深度（指の動き速さ）
+      const now = Date.now();
+      const speed = Math.hypot(x - lastX, y - lastY) / ((now - lastMoveTime) / 1000);
+      lastX = x;
+      lastY = y;
+      lastMoveTime = now;
+      modDepth = Math.min(speed * 0.8, 1.0);
+
+      // アナロググライド
+      currentFreq += (targetFreq - currentFreq) * 0.1;
+
+      // オクターブオンなら+12半音
+      const displayFreq = octaveOn ? currentFreq * 2 : currentFreq;
+
+      statusDiv.textContent = `Freq: ${displayFreq.toFixed(0)}Hz | Vol: ${(currentVol * 100).toFixed(0)}% | Mod: ${(modDepth * 100).toFixed(0)}%`;
+
+      if (!isPlaying) {
+        synth.triggerAttack(currentFreq);
+        isPlaying = true;
+      }
+      synth.setNote(currentFreq);
+      synth.volume.value = -40 + (currentVol * 40);
+
+      // モジュレーション（ビブラート）
+      synth.detune.value = Math.sin(now * 0.01) * modDepth * 50;
+    }
+
+    function stopSound() {
+      if (isPlaying) {
+        synth.triggerRelease();
+        isPlaying = false;
+      }
+    }
+
+    let lastX = 0.5;
+    let lastY = 0.5;
+    let lastMoveTime = Date.now();
+  </script>
+</body>
+</html>
