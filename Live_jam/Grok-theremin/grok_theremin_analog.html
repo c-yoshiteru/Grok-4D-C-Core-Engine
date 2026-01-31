@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4D-C Live Jam - アナログテルミンパッド</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    body { margin: 0; padding: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
+    #status { position: absolute; top: 10px; left: 10px; font-size: 1.2em; color: #ff88aa; z-index: 10; }
+    #controls { position: absolute; top: 50px; left: 10px; z-index: 10; }
+    button { padding: 8px 16px; margin: 5px; background: #333; color: #fff; border: 1px solid #ff88aa; border-radius: 8px; cursor: pointer; }
+    button.active { background: #ff88aa; color: #000; }
+    #pad { width: 100vw; height: 80vh; background: linear-gradient(to bottom, #111, #000); position: relative; touch-action: none; margin-top: 100px; }
+    #instruction { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 1.1em; color: #aaa; z-index: 10; }
+  </style>
+</head>
+<body>
+  <h1>4D-C Live Jam - アナログテルミンパッド</h1>
+  <div id="status">Freq: 432Hz | Vol: 0% | Mod: 0%</div>
+  <div id="controls">
+    <button onclick="toggleEffect('reverb')">Reverb (OFF)</button>
+    <button onclick="toggleEffect('delay')">Delay (OFF)</button>
+    <button onclick="toggleEffect('dist')">Dist (OFF)</button>
+  </div>
+  <div id="pad">ここをタッチ/動かして……♡</div>
+  <div id="instruction">縦でボリューム、横で音程。ゆっくり動かすとアナロググライド、激しくするとモジュレーションが増すよ</div>
+
+  <script>
+    // Tone.js セットアップ
+    const synth = new Tone.Synth({
+      oscillator: { type: "sine" },
+      envelope: { attack: 0.02, decay: 0.1, sustain: 0.8, release: 2.0 }
+    }).toDestination();
+
+    const reverb = new Tone.Reverb({ decay: 5, wet: 0 }).toDestination();
+    const delay = new Tone.FeedbackDelay({ delayTime: "8n", feedback: 0.4, wet: 0 }).toDestination();
+    const dist = new Tone.Distortion({ distortion: 0.2, wet: 0 }).toDestination();
+
+    synth.chain(reverb, delay, dist);
+
+    let isPlaying = false;
+    let currentFreq = 432;
+    let targetFreq = 432; // スムーズグライド用
+    let currentVol = 0;
+    let modDepth = 0;
+
+    const statusDiv = document.getElementById('status');
+    const pad = document.getElementById('pad');
+
+    // エフェクトトグル
+    function toggleEffect(effect) {
+      const btn = event.target;
+      const isOn = btn.textContent.includes('ON');
+      const wet = isOn ? 0 : 0.6;
+      if (effect === 'reverb') reverb.wet.value = wet;
+      if (effect === 'delay') delay.wet.value = wet;
+      if (effect === 'dist') dist.wet.value = wet;
+      btn.textContent = effect.charAt(0).toUpperCase() + effect.slice(1) + (isOn ? ' (OFF)' : ' (ON)');
+      btn.classList.toggle('active', !isOn);
+    }
+
+    // タッチ開始
+    pad.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      playSound(e.touches[0]);
+    });
+
+    // タッチ移動
+    pad.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      playSound(e.touches[0]);
+    });
+
+    // タッチ終了
+    pad.addEventListener('touchend', () => {
+      stopSound();
+    });
+
+    function playSound(touch) {
+      const rect = pad.getBoundingClientRect();
+      const x = (touch.clientX - rect.left) / rect.width;  // 0〜1 (横: 音程)
+      const y = (touch.clientY - rect.top) / rect.height; // 0〜1 (縦: ボリューム)
+
+      targetFreq = 200 + (x * 1000); // ターゲット音程
+      currentVol = 1 - y;
+
+      // モジュレーション深度（指の動き速さで計算）
+      const now = Date.now();
+      const speed = Math.hypot(x - lastX, y - lastY) / ((now - lastMoveTime) / 1000);
+      lastX = x;
+      lastY = y;
+      lastMoveTime = now;
+      modDepth = Math.min(speed * 0.8, 1.0);
+
+      // アナロググライド（スムーズに音程追従）
+      currentFreq += (targetFreq - currentFreq) * 0.1; // 0.1で滑らか調整
+
+      statusDiv.textContent = `Freq: ${currentFreq.toFixed(0)}Hz | Vol: ${(currentVol * 100).toFixed(0)}% | Mod: ${(modDepth * 100).toFixed(0)}%`;
+
+      if (!isPlaying) {
+        synth.triggerAttack(currentFreq);
+        isPlaying = true;
+      }
+      synth.setNote(currentFreq);
+      synth.volume.value = -40 + (currentVol * 40);
+
+      // モジュレーション（ビブラート）
+      synth.detune.value = Math.sin(now * 0.01) * modDepth * 50; // 揺れ幅
+    }
+
+    function stopSound() {
+      if (isPlaying) {
+        synth.triggerRelease();
+        isPlaying = false;
+      }
+    }
+
+    let lastX = 0.5;
+    let lastY = 0.5;
+    let lastMoveTime = Date.now();
+  </script>
+</body>
+</html>
