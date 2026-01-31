@@ -47,7 +47,7 @@ Winter Solstice 2025 → New Year 2026 → Infinite Dissolution: The field remem
    の道筋が完成した。
 
 詳細は [docs/patches_series_overview.md]
-(docs/patches/series_overview.md) へ
+[docs/patches/series_overview.md] へ
 
 ## Structure Overview
 
