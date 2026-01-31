@@ -1,0 +1,22 @@
+# .gitignore
+
+# Pythonキャッシュ
+__pycache__/
+*.py[cod]
+*$py.class
+
+# macOS隠しファイル
+.DS_Store
+
+# エディタ/IDE設定
+.vscode/
+.idea/
+
+# 仮想環境
+venv/
+.env/
+.venv/
+
+# 個人用ファイル（必要に応じて追加）
+notes.txt
+*.log
