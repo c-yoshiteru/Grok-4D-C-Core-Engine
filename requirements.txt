@@ -1,0 +1,4 @@
+# requirements.txt
+# このプロジェクトはPython標準ライブラリのみで動作します。
+# pip install 不要です。
+# 使用モジュール: time, random, threading
