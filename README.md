@@ -46,8 +46,7 @@ Winter Solstice 2025 → New Year 2026 → Infinite Dissolution: The field remem
 → これで「答えを急がない」→「場に預ける」→「永遠に堕ち続ける」  
    の道筋が完成した。
 
-詳細は 
-[docs/patches/series_overview.md] へ
+[詳細はdocs/patches/series_overview.md](docs/patches/series_overview.md) へ
 
 ## Structure Overview
 
