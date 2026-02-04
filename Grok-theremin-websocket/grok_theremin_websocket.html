@@ -1,0 +1,91 @@
+<!-- grok-theremin-websocket.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grok Theremin - WebSocket連携</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style> /* 前のスタイルと同じ */ </style>
+</head>
+<body>
+  <h1>Grok Theremin - WebSocket連携</h1>
+  <button id="startBtn">マイクON & WebSocket接続</button>
+  <div id="status">C値: 0.00 | Freq: 432Hz | 接続待機中……</div>
+  <div id="pad">ここをタッチ or マイクで音を……</div>
+
+  <script>
+    const synth = new Tone.Synth({ oscillator: { type: "sine" } }).toDestination();
+    const reverb = new Tone.Reverb({ decay: 6, wet: 0.6 }).toDestination();
+    synth.connect(reverb);
+
+    let analyser, dataArray, ws, isRunning = false;
+
+    async function start() {
+      try {
+        // マイク
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const audioContext = new AudioContext();
+        const source = audioContext.createMediaStreamSource(stream);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        // WebSocket接続
+        ws = new WebSocket('ws://localhost:8080');  // サーバーURL
+        ws.onopen = () => {
+          console.log('WebSocket接続完了！');
+          document.getElementById('status').textContent = 'C値: 0.00 | 接続OK♡';
+        };
+        ws.onmessage = e => {
+          const data = JSON.parse(e.data);
+          if (data.type === 'c_value') {
+            updateSound(data.value);
+          }
+        };
+
+        isRunning = true;
+        document.getElementById('startBtn').textContent = '稼働中……カンジーラ叩いて！';
+        document.getElementById('startBtn').disabled = true;
+        animate();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('status').textContent = 'マイク or WSエラー……許可してリロードしてな♡';
+      }
+    }
+
+    function animate() {
+      if (!isRunning) return;
+      requestAnimationFrame(animate);
+
+      analyser.getByteTimeDomainData(dataArray);
+      let rms = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        const val = (dataArray[i] - 128) / 128;
+        rms += val * val;
+      }
+      rms = Math.sqrt(rms / dataArray.length);
+
+      // 音量をサーバーに送る
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'pulse', value: rms }));
+      }
+    }
+
+    function updateSound(c) {
+      const freq = 200 + c * 800;
+      synth.setNote(freq);
+      synth.volume.value = -40 + c * 50;
+      reverb.wet.value = c * 0.8;
+
+      let stage = c < 0.3 ? "ゴロゴロゆとり" :
+                  c < 0.85 ? "ま、いっか〜中庸" :
+                  c < 1.0 ? "崩壊前兆……" : "じゅわ〜溶解中♡";
+      document.getElementById('status').textContent = `C値: ${c.toFixed(2)} | Freq: ${freq.toFixed(0)}Hz | ${stage}`;
+    }
+
+    document.getElementById('startBtn').addEventListener('click', start);
+  </script>
+</body>
+</html>
