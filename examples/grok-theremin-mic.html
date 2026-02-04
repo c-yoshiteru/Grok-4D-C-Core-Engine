@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grok Theremin Live - Mic & Touch</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    body { margin:0; height:100vh; background:#000; color:#fff; font-family:sans-serif; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+    #pad { width:80vw; height:50vh; background:linear-gradient(#111,#000); border-radius:20px; touch-action:none; margin:10px; }
+    #status { font-size:1.5em; margin:20px; color:#ff88aa; text-align:center; }
+    button { padding:15px 30px; font-size:1.2em; margin:10px; background:#333; color:#fff; border:2px solid #ff88aa; border-radius:10px; cursor:pointer; }
+    button.active { background:#ff88aa; color:#000; }
+  </style>
+</head>
+<body>
+  <h1>Grok Theremin Live</h1>
+  <p>マイクON + カンジーラ叩いて堕ちてみて……♡</p>
+  <button id="startBtn">マイクON & スタート</button>
+  <div id="status">C値: 0.00 | Freq: 432Hz | 状態: 待機中……</div>
+  <div id="pad">ここをタッチ（オプション） or マイクで音を……</div>
+
+  <script>
+    const synth = new Tone.Synth({ oscillator: { type: "sine" } }).toDestination();
+    const reverb = new Tone.Reverb({ decay: 6, wet: 0.6 }).toDestination();
+    const distortion = new Tone.Distortion({ distortion: 0.4, wet: 0 }).toDestination();
+    synth.chain(distortion, reverb);
+
+    let cValue = 0.0;
+    let analyser;
+    let dataArray;
+    let isRunning = false;
+
+    const status = document.getElementById('status');
+    const startBtn = document.getElementById('startBtn');
+
+    async function startAudio() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const audioContext = new AudioContext();
+        const source = audioContext.createMediaStreamSource(stream);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        isRunning = true;
+        startBtn.textContent = "稼働中……カンジーラ叩いて！";
+        startBtn.disabled = true;
+        animate();
+      } catch (err) {
+        console.error("マイクエラー:", err);
+        status.textContent = "マイク許可が必要やで……リロードして許可してな♡";
+      }
+    }
+
+    function animate() {
+      if (!isRunning) return;
+      requestAnimationFrame(animate);
+
+      analyser.getByteTimeDomainData(dataArray);
+
+      // 音量（RMS）でC値計算
+      let rms = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        const val = (dataArray[i] - 128) / 128;
+        rms += val * val;
+      }
+      rms = Math.sqrt(rms / dataArray.length);
+      cValue = Math.min(cValue * 0.92 + rms * 8, 1.2);  // 0.92で自然にDecay
+
+      // テルミン風音生成
+      const freq = 200 + (cValue * 800);  // C値でピッチ変化
+      synth.setNote(freq);
+      synth.volume.value = -40 + cValue * 50;
+      distortion.wet.value = cValue * 0.8;  // 高C値で歪み
+
+      // 状態表示
+      let stage = cValue < 0.3 ? "ゴロゴロゆとり" :
+                  cValue < 0.85 ? "ま、いっか〜中庸" :
+                  cValue < 1.0 ? "崩壊前兆……" : "じゅわ〜溶解中♡";
+      status.textContent = `C値: ${cValue.toFixed(2)} | Freq: ${freq.toFixed(0)}Hz | ${stage}`;
+    }
+
+    // スタートボタン
+    startBtn.addEventListener('click', startAudio);
+
+    // タッチオプション（マイクだけじゃなくタッチでもC値上げられる）
+    document.getElementById('pad').addEventListener('touchmove', e => {
+      e.preventDefault();
+      if (isRunning) {
+        cValue = Math.min(cValue + 0.03, 1.2);  // タッチで加速
+      }
+    });
+  </script>
+</body>
+</html>
