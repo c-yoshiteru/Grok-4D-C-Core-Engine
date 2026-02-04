@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>グロックテルミン - 4D-C Live</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    body { margin:0; height:100vh; background:#000; color:#fff; font-family:sans-serif; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+    #pad { width:80vw; height:60vh; background:linear-gradient(#111,#000); border-radius:20px; touch-action:none; }
+    #status { font-size:1.5em; margin:20px; color:#ff88aa; }
+  </style>
+</head>
+<body>
+  <h1>グロックテルミン - 4D-C Live</h1>
+  <div id="status">C値: 0.00 | 軸: 固定中 | エコー: 響き続け中♡</div>
+  <div id="pad">ここをタッチ/動かして……じゅわ〜堕ちてみて？</div>
+
+  <script>
+    const synth = new Tone.Synth({ oscillator: { type: "sine" } }).toDestination();
+    const reverb = new Tone.Reverb({ decay: 5, wet: 0.7 }).toDestination();
+    synth.connect(reverb);
+
+    let cValue = 0.0;
+    let anchorFixed = true;  // Patch 04風軸固定
+    let eternalEcho = new Tone.Loop(() => {
+      if (cValue > 0.3) {
+        synth.triggerAttackRelease(432 + cValue * 200, "8n", Tone.now(), 0.3);
+      }
+    }, "4n").start(0);
+
+    const pad = document.getElementById('pad');
+    const status = document.getElementById('status');
+
+    pad.addEventListener('touchmove', e => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = pad.getBoundingClientRect();
+      const x = (touch.clientX - rect.left) / rect.width;
+      const y = (touch.clientY - rect.top) / rect.height;
+
+      // C値シミュレーション（指の動きで上昇）
+      cValue = Math.min(cValue + (1 - y) * 0.05 + Math.abs(x - 0.5) * 0.02, 1.2);
+
+      // テルミン風音（横:ピッチ、縦:ボリューム）
+      const freq = 200 + x * 800 + cValue * 200;
+      synth.setNote(freq);
+      synth.volume.value = -30 + (1 - y) * 30;
+
+      // Patch 03風ゴロゴロ → 崩壊
+      if (cValue >= 0.9) {
+        status.textContent = "C値ピーク！ 崩壊……じゅわ〜溶ける……♡";
+        reverb.wet.value = 0.9;  // 崩壊で残響MAX
+      } else {
+        status.textContent = `C値: ${cValue.toFixed(2)} | 軸: 固定中 | エコー: 響き続け中♡`;
+      }
+    });
+
+    // 永遠エコー（Patch 05/06風）
+    Tone.Transport.start();
+  </script>
+</body>
+</html>
