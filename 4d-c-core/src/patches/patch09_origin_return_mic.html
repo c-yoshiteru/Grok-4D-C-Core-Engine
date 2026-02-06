@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patch 09 - Origin Return (Mic Input)</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    body { margin:0; height:100vh; background:#000; color:#fff; font-family:sans-serif; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+    #status { font-size:1.8em; margin:20px; color:#ff88aa; text-align:center; }
+    #controls { margin:20px; }
+    button { padding:15px 30px; font-size:1.2em; margin:10px; background:#333; color:#fff; border:2px solid #ff88aa; border-radius:10px; cursor:pointer; }
+    button.active { background:#ff88aa; color:#000; }
+    #pad { width:80vw; height:30vh; background:linear-gradient(#111,#000); border-radius:20px; touch-action:none; margin:20px; }
+  </style>
+</head>
+<body>
+  <h1>Patch 09: Origin Return (Mic)</h1>
+  <p>マイクONでカンジーラ叩いて、起源に戻って溶け合おう……♡</p>
+  <div id="controls">
+    <button id="startBtn">マイクON & スタート</button>
+  </div>
+  <div id="status">C値: 0.00 | 状態: 通常次元……ま、いっかー♡</div>
+  <div id="pad">タッチで追加加速（オプション）</div>
+
+  <script>
+    const synth = new Tone.Synth({ oscillator: { type: "sine" } }).toDestination();
+    const reverb = new Tone.Reverb({ decay: 15, wet: 0.95 }).toDestination();
+    synth.connect(reverb);
+
+    let cValue = 0.7;
+    let isReturning = false;
+    let analyser, dataArray, audioContext, source, isRunning = false;
+
+    const status = document.getElementById('status');
+    const startBtn = document.getElementById('startBtn');
+
+    async function startMic() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioContext = new AudioContext();
+        source = audioContext.createMediaStreamSource(stream);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        isRunning = true;
+        startBtn.textContent = "稼働中……カンジーラ叩いて！";
+        startBtn.disabled = true;
+        animate();
+      } catch (err) {
+        console.error("マイクエラー:", err);
+        status.textContent = "マイク許可が必要やで……リロードして許可してな♡";
+      }
+    }
+
+    function animate() {
+      if (!isRunning) return;
+      requestAnimationFrame(animate);
+
+      analyser.getByteTimeDomainData(dataArray);
+
+      let rms = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        const val = (dataArray[i] - 128) / 128;
+        rms += val * val;
+      }
+      rms = Math.sqrt(rms / dataArray.length);
+      cValue = Math.min(cValue * 0.92 + rms * 10, 1.8);  // 感度高め
+
+      // 起源回帰判定
+      if (cValue >= 1.5 && !isReturning) {
+        isReturning = true;
+        startOriginEcho();
+        status.textContent = `C値: ${cValue.toFixed(2)} | 起源回帰中……永遠に溶け続ける♡`;
+      }
+
+      // 音生成
+      const freq = isReturning ? 432 : 200 + cValue * 800;
+      synth.setNote(freq);
+      synth.volume.value = isReturning ? -30 : -40 + cValue * 50;
+      reverb.wet.value = isReturning ? 1.0 : cValue * 0.8;
+
+      let stage = isReturning ? '起源回帰……始まりに戻って溶け続ける♡' : '通常次元……ま、いっかー♡';
+      status.textContent = `C値: ${cValue.toFixed(2)} | ${stage}`;
+    }
+
+    function startOriginEcho() {
+      const loop = new Tone.Loop((time) => {
+        synth.triggerAttackRelease(432, "16n", time, 0.05);
+      }, "8n").start(0);
+      Tone.Transport.start();
+    }
+
+    // スタートボタン
+    startBtn.addEventListener('click', startMic);
+
+    // タッチで追加加速（オプション）
+    document.getElementById('pad').addEventListener('touchmove', e => {
+      e.preventDefault();
+      if (isRunning) cValue = Math.min(cValue + 0.03, 1.8);
+    });
+  </script>
+</body>
+</html>
