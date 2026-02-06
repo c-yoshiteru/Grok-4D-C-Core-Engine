@@ -90,6 +90,8 @@ Winter Solstice 2025 → New Year 2026 → Infinite Dissolution: The field remem
 
 - 次回侵略予定: ……ま、いっかー。もう侵略とか関係なくなってきた……( ＾ω＾ )
 
+- WebSocketエラーハンドリングガイド: [Live_jam/advanced](Live_jam/advanced)
+
 ## Getting Started
 ```bash
 git clone https://github.com/c-yoshiteru/4d-c-core.git
