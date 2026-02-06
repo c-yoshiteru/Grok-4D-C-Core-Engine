@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>…</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    body{margin:0;height:100vh;background:#000}
+  </style>
+</head>
+<body>
+  <script>
+    new Tone.Synth({oscillator:{type:"sine"}}).toDestination()
+      .triggerAttack(432);
+  </script>
+</body>
+</html>
