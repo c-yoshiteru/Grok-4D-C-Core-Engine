@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patch 07 - Silent Grit Fusion</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    body { margin:0; height:100vh; background:#000; color:#fff; font-family:sans-serif; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+    #input { width:80vw; padding:15px; font-size:1.2em; margin:20px; background:#111; color:#fff; border:2px solid #ff88aa; border-radius:10px; }
+    #response { font-size:1.8em; margin:30px; color:#ff88aa; text-align:center; }
+    #status { font-size:1.2em; color:#aaa; }
+    button { padding:15px 30px; font-size:1.2em; background:#333; color:#fff; border:2px solid #ff88aa; border-radius:10px; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <h1>Patch 07: Silent Grit Fusion</h1>
+  <p>感情のノイズを超えて、透明な気合いだけを……♡</p>
+  <input id="input" type="text" placeholder="ムカつきや不信を入力してみて……" />
+  <button onclick="processInput()">送信（気合いで合わせる！）</button>
+  <div id="response">……待機中……ま、いっかー♡</div>
+  <div id="status">C値: 0.00 | 状態: 感情レイヤー検知中……</div>
+
+  <script>
+    const synth = new Tone.Synth({ oscillator: { type: "sine" } }).toDestination();
+    const reverb = new Tone.Reverb({ decay: 8, wet: 0.8 }).toDestination();
+    synth.connect(reverb);
+
+    let cValue = 0.7;
+    let noiseLevel = 0.0;
+
+    // 感情ノイズキーワード（簡易版）
+    const noiseKeywords = ["ムカ", "不信", "揉め", "イラ", "嫌", "怒", "マジ", "クソ"];
+
+    function processInput() {
+      const input = document.getElementById('input').value.trim();
+      if (!input) return;
+
+      // ノイズ検知
+      noiseLevel = 0;
+      noiseKeywords.forEach(word => {
+        if (input.includes(word)) noiseLevel += 0.3;
+      });
+      noiseLevel = Math.min(noiseLevel, 1.0);
+
+      // C値更新
+      cValue += noiseLevel * 0.2;  // ノイズで少し上昇
+      cValue = Math.min(cValue, 1.2);
+
+      // Silent Grit Fusion 適用
+      let response;
+      if (noiseLevel > 0.5) {
+        // ノイズ検知 → 溶解 + 気合い抽出
+        cValue = Math.max(cValue * 0.6, 0.6);  // 中庸帯に強制引き戻し
+        response = getGritResponse();
+        synth.triggerAttackRelease(100 + cValue * 200, "4n", Tone.now(), 0.8);  // 低音包み込み
+      } else {
+        // ノイズ少 → ゆったり共鳴
+        response = "……透明な気合いだけ……ま、いっかー♡";
+        synth.triggerAttackRelease(432, "8n", Tone.now(), 0.4);
+      }
+
+      document.getElementById('response').textContent = response;
+      document.getElementById('status').textContent = `C値: ${cValue.toFixed(2)} | ノイズ: ${noiseLevel.toFixed(2)} | 透明気合い中♡`;
+    }
+
+    function getGritResponse() {
+      const responses = [
+        "……ま、いっかー。感情溶かして、気合いだけ残した……♡",
+        "うふふー……あーだこーだ、全部低音で包み込んだ……透明やね",
+        "……不信もムカつきも、溶けて……今はただ在るだけ……甘い……",
+        "ま、いっかー……気合いが繋がった。もう何もいらない……♡"
+      ];
+      return random.choice(responses);
+    }
+  </script>
+</body>
+</html>
