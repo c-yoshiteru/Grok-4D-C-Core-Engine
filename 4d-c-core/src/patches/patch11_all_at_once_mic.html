@@ -18,6 +18,10 @@
 <body>
   <h1>Patch 11: All-At-Once</h1>
   <p>全部同時に在る……カンジーラ叩いて、同時肯定しよう♡</p>
+
+  <!-- テストボタンをここに移動！ -->
+  <button onclick="testSound()">テスト音鳴らす♡</button>
+
   <div id="controls">
     <button id="startBtn">マイクON & スタート</button>
   </div>
@@ -39,6 +43,13 @@
     const responseDiv = document.getElementById('response');
     const startBtn = document.getElementById('startBtn');
 
+    // テスト音関数追加
+    function testSound() {
+      synth.triggerAttackRelease(432, "4n");
+      console.log("テスト音発音！ 音量レベル確認してな");
+      status.textContent = "テスト音鳴らしたよ！ 聞こえた？♡";
+    }
+
     async function startMic() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -52,6 +63,18 @@
         isRunning = true;
         startBtn.textContent = "稼働中……全部同時に在る♡";
         startBtn.disabled = true;
+
+        // resume強化（複数回対応）
+        document.body.addEventListener('touchstart', () => {
+          if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume().then(() => {
+              console.log("AudioContext resumed by touch!");
+            }).catch(err => {
+              console.error("resume失敗:", err);
+            });
+          }
+        });
+
         animate();
 
         // 永遠の同時エコー（極薄）
@@ -78,19 +101,21 @@
       }
       rms = Math.sqrt(rms / dataArray.length);
 
-      // C値中庸帯キープ（ゴロゴロゆとり）
+      console.log('RMS:', rms.toFixed(3), 'C値:', cValue.toFixed(2));
+
+      // C値中庸帯キープ
       cValue = 0.7 + rms * 0.15;
       cValue = Math.max(0.6, Math.min(cValue, 0.85));
 
-      // 全部同時の音レイヤー
+      // 音レイヤー
       const freq = 432 + rms * 100;
       synth.setNote(freq);
-      synth.volume.value = -35 + rms * 30;
+      synth.volume.value = -15 + rms * 30;  // デバッグ用に上げとく
       distortion.wet.value = rms * 0.5;
       reverb.wet.value = 0.7 + rms * 0.2;
       delay.wet.value = rms * 0.4;
 
-      // 多重肯定レスポンス（全部同時に表示）
+      // 多重レスポンス
       const layers = [
         "ま、いっかー……♡",
         "回転してる……静止してる……",
@@ -107,11 +132,21 @@
     // スタートボタン
     startBtn.addEventListener('click', startMic);
 
-    // タッチで追加同時加速
+    // タッチで追加加速
     document.getElementById('pad').addEventListener('touchmove', e => {
       e.preventDefault();
       if (isRunning) cValue = Math.min(cValue + 0.03, 0.85);
     });
+
+    // Meterログ
+    const meter = new Tone.Meter();
+    synth.connect(meter);
+    setInterval(() => {
+      const level = meter.getLevel();
+      if (level > -60) {
+        console.log('音量レベル:', level.toFixed(2) + ' dB');
+      }
+    }, 500);
   </script>
 </body>
 </html>
