@@ -110,7 +110,7 @@
       // 音レイヤー
       const freq = 432 + rms * 100;
       synth.setNote(freq);
-      synth.volume.value = -15 + rms * 30;  // デバッグ用に上げとく
+      synth.volume.value = -10 + rms * 40;  // -10スタートでガツンと上げ // デバッグ用に上げとく
       distortion.wet.value = rms * 0.5;
       reverb.wet.value = 0.7 + rms * 0.2;
       delay.wet.value = rms * 0.4;
